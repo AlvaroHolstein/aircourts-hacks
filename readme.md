@@ -1,0 +1,2 @@
+- próximos passos:
+    - Adicionar identificação da localização dos campos usando a OpenStreetMap Api para depois poder filtrar os campos ainda mais para por exemplo só ver os campos no porto e não em gaia.
