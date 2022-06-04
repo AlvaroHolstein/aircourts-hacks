@@ -1,5 +1,12 @@
 const axios = require("axios");
 
+// https://nodejs.org/en/knowledge/command-line/how-to-prompt-for-command-line-input/
+const readline = require('readline');
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
 const ax = axios.create({
   baseURL: "https://www.aircourts.com/index.php/v2/api/search",
 });
@@ -19,6 +26,20 @@ const requiredParams = {
   page_size: 99, // O comentário acima está cheio de razão
   favorites: 0, // não tenho favoritos nem estou logado (em principio 😁)
 };
+const months = {
+  1: "January",
+  2: "February",
+  3: "March",
+  4: "April",
+  5: "May",
+  6: "June",
+  7: "July",
+  8: "August",
+  9: "September",
+  10: "October",
+  11: "November",
+  12: "December",
+}
 
 /**
  * Reminder - Se o numero for menor que 10 mais vale meter lhe um zero atrás.
@@ -32,12 +53,18 @@ const requiredParams = {
  */
 function getDate(
   day = "02",
-  month = "June" /** Tem que ser o nome em Inglês */,
+  month = months[new Date().getMonth()+1] /** Tem que ser o nome em Inglês */,
   hour = "19",
   year = "2022",
   minute = "00" /** Vai chegar para ter os resultados que quero penso eu de que */,
   seconds = "00" /*  Nem importa*/
 ) {
+  if (!(Number(day) >= 1 && Number(day) <= 31)) {
+    return {
+      success: false,
+      error: "O dia tem que ser válido, estar entre dia 1 e 31"
+    }
+  }
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
   let options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
 
@@ -49,6 +76,7 @@ function getDate(
   let dateForAircourts = `${year}-${date.getMonth() + 1}-${day}`;
   // console.log({ fullDate, dateInCorrectTimeZone, hoursForAircouts, dateForAircourts});
   return {
+    success: true,
     fullDate,
     dateInCorrectTimeZone,
     hoursForAircouts,
@@ -56,10 +84,20 @@ function getDate(
   };
 }
 
-(async function () {
+async function procurarPorCamposVagos(dia, mes) {
   try {
-    // Construir url
-    let time = getDate("02");
+    if (!dia) throw "O dia tem que estar definido";
+    // Construir urleeE
+    let time;
+    if (!mes) {
+      time = getDate(dia);
+    } else time = getDate(dia, mes)
+
+    if (time.success === false) {
+      throw time.error;
+    }
+
+    if (time.dateInCorrectTimeZone == 'Invalid Date') throw "A data que inseriste não é Válida!!!";
     console.log(`\n\t Para a Data -> ${time.dateInCorrectTimeZone}\n`)
     let url = Object.keys(requiredParams)
       .map((el) /*Keys/Paramentes*/ => {
@@ -92,8 +130,12 @@ function getDate(
             if (vaga.locked) return false;
             else {
               if (vaga.start.endsWith(":30") || vaga.end.endsWith(":30")) {
-                // console.log("❌❌❌❌ Não quero saber", `Nome do Campo: ${campo.slug}`, `Court Id: ${vaga.court_id}`, `Horário ${vaga.start} - ${vaga.end}`, "❌❌❌❌")
-               //  return true;
+                console.log("\t",
+                `O Jogo dura sempre 1h`,
+                `Horário ${vaga.start} - ${vaga.end}`,
+                `Court Id: ${vaga.court_id}`,
+              );
+                return true;
               }
               console.log("\t",
                 // `Nome do Campo: ${campo.slug}`,
@@ -127,4 +169,37 @@ function getDate(
   } catch (madafackingErro) {
     console.log("El erro!", madafackingErro);
   }
-})();
+}
+
+rl.question('Para que dia queres procurar?: ', (day) => {
+  if (isNaN(day)) {
+    console.log("\nTens que inserir um numero oh urro!!\n")
+    rl.close();
+  }
+  
+  if (!(Number(day) >= 1 && Number(day) <= 31)) {
+    console.log("O dia tem que ser válido, estar entre dia 1 e 31");
+    rl.close();
+  }
+  rl.question("É este mês? (Y/N): ", async (answer) => {
+    if (answer.toUpperCase() === "Y") {
+      await procurarPorCamposVagos(day);
+      rl.close();
+    } else {
+
+      rl.question('Em que mês então? (Por extenso e em Inglês favavore): ', async (month) => {
+        if (!Object.keys(months).find(m => months[m].toUpperCase() == month.toUpperCase())) {
+          console.log("Este mês não existe !!!");
+          rl.close();
+        }
+        await procurarPorCamposVagos(day, month);
+        rl.close()
+      });
+    }
+  })
+});
+
+rl.on('close', function () {
+  console.log('\n\tBYE BYE !!!\n');
+  process.exit(0);
+});

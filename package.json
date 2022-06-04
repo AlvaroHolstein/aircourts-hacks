@@ -1,0 +1,25 @@
+{
+  "name": "aircouts-hacks",
+  "version": "1.0.0",
+  "description": "Procurar pelos campos vazios num campos vazios através de fazer pedidos http ao backend do aircourts",
+  "main": "olha-para-estas-vagas.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlvaroHolstein/aircourts-hacks.git"
+  },
+  "keywords": [
+    "aircourts"
+  ],
+  "author": "adholstein@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AlvaroHolstein/aircourts-hacks/issues"
+  },
+  "homepage": "https://github.com/AlvaroHolstein/aircourts-hacks#readme",
+  "dependencies": {
+    "axios": "^0.27.2"
+  }
+}
