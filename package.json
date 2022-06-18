@@ -4,7 +4,8 @@
   "description": "Procurar pelos campos vazios num campos vazios através de fazer pedidos http ao backend do aircourts",
   "main": "olha-para-estas-vagas.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "nodemon --ignore '*.json' --ignore README olha-para-estas-vagas.js"
   },
   "repository": {
     "type": "git",
