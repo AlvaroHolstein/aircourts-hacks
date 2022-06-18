@@ -1,4 +1,6 @@
 const axios = require("axios");
+const fs = require("fs")
+const { posix } = require("path");
 
 // https://nodejs.org/en/knowledge/command-line/how-to-prompt-for-command-line-input/
 const readline = require('readline');
@@ -10,6 +12,21 @@ const rl = readline.createInterface({
 const ax = axios.create({
   baseURL: "https://www.aircourts.com/index.php/v2/api/search",
 });
+
+/**
+ * 
+ * @param {string} [position= top || bottom]  
+ * @param {string} length 
+ * @returns - A "string" border used to "encapsulate" content
+ */
+function borders(position = "top" || "bot", length = 35) {
+  const charArr = position == "top" ? "¯¯" /*Overline*/ : "_"/*Underscore*/
+  if (position == "bot") length *= 2
+  const helperArr = Array(length).fill(charArr);
+  helperArr.unshift("\n|");
+  helperArr.push("|\n");
+  return helperArr.join('');
+}
 
 /**
  * Este objeto tem as keys com o nome correto dos parametros necessários
@@ -120,51 +137,65 @@ async function procurarPorCamposVagos(dia, mes) {
     todosOsCampos = todosOsCampos.data.results;
 
     let totalDeVagas = 0;
-    todosOsCampos.forEach((campo, i) => {
+    todosOsCampos.map((campo, i) => {
       slots = campo.slots;
-
       let temVagas = [];
       if (slots.length > 0) {
+        
+        // Aqui é que realmente filtro os campos vagos.
         temVagas = slots.filter((vaga, index) => {
           if (index < 3) {
             if (vaga.locked) return false;
             else {
               if (vaga.start.endsWith(":30") || vaga.end.endsWith(":30")) {
-                console.log("\t",
-                `O Jogo dura sempre 1h`,
-                `Horário ${vaga.start} - ${vaga.end}`,
-                `Court Id: ${vaga.court_id}`,
-              );
+                
                 return true;
               }
-              console.log("\t",
-                // `Nome do Campo: ${campo.slug}`,
-                `Horário ${vaga.start} - ${vaga.end}`,
-                `Court Id: ${vaga.court_id}`,
-              );
-
+              
               return true;
             }
           } else {
             return false;
           }
         });
-        if (temVagas.length > 0) {
-          console.log(
-            `✅✅✅ Campo Vago ${campo.slug} \n __________________\n `,
-            `\nHá ${temVagas.length} vagas aqui\n`,
-            campo.address,
-            `\nMaterial \n\t--> ${campo.available_material ? campo.available_material : "Aparentemente não disponiblizam nada!!!"}`,
-            `\nPode se pagar com \n\t--> ${campo.payment_methods ? campo.payment_methods : "Sei lá eu!!!"}`,"\n __________________\n\n\n"
-          );
-          totalDeVagas += temVagas.length;
-        }
+
+        campo.temVagas = temVagas;
+        return campo;
       }
+      campo.temVagas = [];
+      return campo;
     });
+    
+
+    for (let campo of todosOsCampos) {
+
+      const temVagas = campo.temVagas;
+      if (temVagas.length > 0) {
+        // fs.writeFileSync(`./testTemVagas${i}.json`, JSON.stringify(temVagas), "utf8", () => {})
+        // Formatar output que vai para a consola
+        console.log(borders("top"), JSON.stringify(temVagas))
+
+        temVagas.forEach(vaga => {
+          console.log("\t",
+              `Horário ${vaga.start} - ${vaga.end} ${(vaga.start.endsWith(":30") || vaga.end.endsWith(":30") ? "Duração (1h)" : "")}`,
+              `Court Id: ${vaga.court_id} \n`,
+            );
+        })
+        console.log(
+          `✅✅✅ Campo Vago ${campo.slug} \n __________________\n `,
+          `\nHá ${temVagas.length} vagas aqui\n`,
+          campo.address,
+          `\nMaterial \n\t--> ${campo.available_material ? campo.available_material : "Aparentemente não disponiblizam nada!!!"}`,
+          `\nPode se pagar com \n\t--> ${campo.payment_methods ? campo.payment_methods : "Sei lá eu!!!"}`,"\n __________________\n\n\n"
+        );
+        totalDeVagas += temVagas.length;
+        console.log(borders("bot"))
+      }
+    }
     console.log(
       `Há ${totalDeVagas} vagas ${
-        totalDeVagas > 5 ? "🥳🥳 Bota Caralho 🥳🥳" : "Fodeu 😟", "\n"
-      }`
+        totalDeVagas > 5 ? "🥳🥳 Bota Caralho 🥳🥳" : "Fodeu 😟"
+      }`, "\n"
     );
   } catch (madafackingErro) {
     console.log("El erro!", madafackingErro);
